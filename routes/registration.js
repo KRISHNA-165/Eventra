@@ -58,6 +58,7 @@ router.post('/register', async (req, res) => {
             qrCodeData: qrData
         });
 
+
         await participant.save();
 
         res.json({
