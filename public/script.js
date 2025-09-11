@@ -4,7 +4,7 @@ let html5QrcodeScanner = null;
 let adminToken = null;
 
 // API Base URL
-const API_BASE = 'https://eventra-j4r0.onrender.com';
+const API_BASE = 'https://eventra-j4r0.onrender.com/api';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
