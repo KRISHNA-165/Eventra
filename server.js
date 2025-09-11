@@ -38,3 +38,11 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/event_att
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+const cors = require('cors');
+
+// Allow your Vercel frontend to access the backend
+app.use(cors({
+    origin: 'https://eventra-1yis7vh5x-krishna-165s-projects.vercel.app',
+    credentials: true
+}));
+
