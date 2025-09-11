@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Attendance System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calendar-check"></i> Event Attendance System</h1>
+            <nav>
+                <button class="nav-btn active" data-page="registration">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+                <button class="nav-btn" data-page="scanner">
+                    <i class="fas fa-qrcode"></i> Scan QR
+                </button>
+                <button class="nav-btn" data-page="admin">
+                    <i class="fas fa-cog"></i> Admin
+                </button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Registration Page -->
+            <div id="registration-page" class="page active">
+                <div class="card">
+                    <h2><i class="fas fa-user-plus"></i> Event Registration</h2>
+                    <form id="registration-form">
+                        <div class="form-group">
+                            <label for="name">Full Name *</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registrationId">Registration ID (Optional)</label>
+                            <input type="text" id="registrationId" name="registrationId" placeholder="Leave empty for auto-generation">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Register
+                        </button>
+                    </form>
+                </div>
+
+                <!-- QR Code Display -->
+                <div id="qr-result" class="card hidden">
+                    <h3><i class="fas fa-qrcode"></i> Your QR Code</h3>
+                    <div class="qr-container">
+                        <img id="qr-image" src="" alt="QR Code">
+                    </div>
+                    <div class="participant-info">
+                        <p><strong>Name:</strong> <span id="participant-name"></span></p>
+                        <p><strong>Email:</strong> <span id="participant-email"></span></p>
+                        <p><strong>Registration ID:</strong> <span id="participant-reg-id"></span></p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="printQR()">
+                        <i class="fas fa-print"></i> Print QR Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- QR Scanner Page -->
+            <div id="scanner-page" class="page">
+                <div class="card">
+                    <h2><i class="fas fa-qrcode"></i> QR Code Scanner</h2>
+                    <div id="scanner-container">
+                        <div id="qr-reader"></div>
+                        <div id="qr-reader-results"></div>
+                    </div>
+                    <div id="scan-result" class="hidden">
+                        <div class="result-message">
+                            <i class="fas fa-check-circle success"></i>
+                            <h3>Attendance Marked Successfully!</h3>
+                            <div class="participant-details">
+                                <p><strong>Name:</strong> <span id="scan-name"></span></p>
+                                <p><strong>Email:</strong> <span id="scan-email"></span></p>
+                                <p><strong>Registration ID:</strong> <span id="scan-reg-id"></span></p>
+                                <p><strong>Time:</strong> <span id="scan-time"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="scan-error" class="hidden">
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-triangle error"></i>
+                            <h3 id="error-title">Error</h3>
+                            <p id="error-message"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Page -->
+            <div id="admin-page" class="page">
+                <div class="card">
+                    <h2><i class="fas fa-cog"></i> Admin Dashboard</h2>
+                    
+                    <!-- Login Form -->
+                    <div id="admin-login">
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="admin-email">Email</label>
+                                <input type="email" id="admin-email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-password">Password</label>
+                                <input type="password" id="admin-password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Dashboard Content -->
+                    <div id="admin-dashboard" class="hidden">
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <i class="fas fa-users"></i>
+                                <h3 id="total-registered">0</h3>
+                                <p>Total Registered</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-check-circle"></i>
+                                <h3 id="total-attended">0</h3>
+                                <p>Attended</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-clock"></i>
+                                <h3 id="total-remaining">0</h3>
+                                <p>Remaining</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-percentage"></i>
+                                <h3 id="attendance-rate">0%</h3>
+                                <p>Attendance Rate</p>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-actions">
+                            <button class="btn btn-success" onclick="exportToExcel()">
+                                <i class="fas fa-file-excel"></i> Export to Excel
+                            </button>
+                            <button class="btn btn-info" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-secondary" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+
+                        <div class="recent-attendees">
+                            <h3><i class="fas fa-history"></i> Recent Attendees</h3>
+                            <div id="recent-list" class="attendees-list">
+                                <!-- Recent attendees will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
