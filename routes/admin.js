@@ -1,141 +1,190 @@
 const express = require('express');
-const ExcelJS = require('exceljs');
-const Participant = require('../models/Participant');
 const auth = require('../middleware/auth');
+const User = require('../models/User');
+const Event = require('../models/Event');
+const Participant = require('../models/Participant');
 const router = express.Router();
 
-// Get dashboard statistics
-router.get('/dashboard', auth, async (req, res) => {
+const isOrganizer = (req, res, next) => {
+    if (req.user && req.user.role === 'organizer') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access denied. Organizers only.' });
+    }
+};
+
+// 1. Create Admin Account (Organizer only)
+router.post('/create-admin', auth, isOrganizer, async (req, res) => {
     try {
-        const totalRegistered = await Participant.countDocuments();
-        const totalAttended = await Participant.countDocuments({ attendanceStatus: 'Attended' });
-        const totalNotAttended = totalRegistered - totalAttended;
+        const { name, email, password, assignedEvents } = req.body;
 
-        // Get recent attendees (last 10)
-        const recentAttendees = await Participant.find({ attendanceStatus: 'Attended' })
-            .sort({ attendanceTimestamp: -1 })
-            .limit(10)
-            .select('name email registrationId attendanceTimestamp');
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'Name, email, and password are required' });
+        }
 
-        res.json({
-            stats: {
-                totalRegistered,
-                totalAttended,
-                totalNotAttended,
-                attendanceRate: totalRegistered > 0 ? ((totalAttended / totalRegistered) * 100).toFixed(2) : 0
-            },
-            recentAttendees
+        const existing = await User.findOne({ email });
+        if (existing) {
+            return res.status(400).json({ message: 'A user account with this email already exists' });
+        }
+
+        const adminUser = new User({
+            name,
+            email,
+            password,
+            role: 'admin',
+            assignedEvents: assignedEvents || []
         });
+        await adminUser.save();
+
+        res.status(201).json({ message: 'Admin account created successfully.' });
     } catch (error) {
-        console.error('Dashboard error:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Error creating administrator account.' });
     }
 });
 
-// Get all participants
-router.get('/participants', auth, async (req, res) => {
+// 2. Revoke Admin Account (Organizer only)
+router.delete('/revoke-admin/:id', auth, isOrganizer, async (req, res) => {
     try {
-        const { page = 1, limit = 50, status } = req.query;
-        const skip = (page - 1) * limit;
+        await User.findOneAndDelete({ _id: req.params.id, role: 'admin' });
+        res.json({ message: 'Admin credentials revoked successfully.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error revoking administrator access.' });
+    }
+});
 
-        let query = {};
-        if (status && status !== 'all') {
-            query.attendanceStatus = status;
+// 3. List Active Administrators (Organizer only)
+router.get('/list-admins', auth, isOrganizer, async (req, res) => {
+    try {
+        const admins = await User.find({ role: 'admin' })
+            .select('-password')
+            .populate('assignedEvents', 'name');
+        res.json({ admins });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching admins list.' });
+    }
+});
+
+// 4. Organizer Portal Stats (PRD Section 14)
+router.get('/organizer-stats', auth, isOrganizer, async (req, res) => {
+    try {
+        const orgId = req.user._id;
+        const totalEvents = await Event.countDocuments({ organizer: orgId });
+        
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const upcomingEvents = await Event.countDocuments({ organizer: orgId, endDate: { $gte: now } });
+
+        const myEvents = await Event.find({ organizer: orgId }).select('_id');
+        const myEventIds = myEvents.map(e => e._id);
+
+        const totalRegistrations = await Participant.countDocuments({ event: { $in: myEventIds }, isVerified: true });
+        const totalAttendance = await Participant.countDocuments({ event: { $in: myEventIds }, isVerified: true, attendanceStatus: 'Checked-In' });
+
+        res.json({
+            stats: {
+                totalEvents,
+                upcomingEvents,
+                totalRegistrations,
+                totalAttendance
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving organizer statistics.' });
+    }
+});
+
+// 5. Admin Event Dashboard Summary (PRD Section 15)
+router.get('/:eventId/dashboard', auth, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found.' });
+        }
+
+        const totalRegistrations = await Participant.countDocuments({ event: eventId, isVerified: true });
+        const checkedInCount = await Participant.countDocuments({ event: eventId, isVerified: true, attendanceStatus: 'Checked-In' });
+
+        res.json({
+            event: {
+                name: event.name,
+                venue: event.venue,
+                startDate: event.startDate,
+                startTime: event.startTime,
+                description: event.description,
+                category: event.category,
+                maximumCapacity: event.maximumCapacity
+            },
+            stats: {
+                totalRegistrations,
+                checkedInCount
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error loading admin event dashboard.' });
+    }
+});
+
+// 6. Paginated & Searchable Participant Directory (PRD Section 15)
+router.get('/:eventId/participants', auth, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const { search = '', page = 1, limit = 50 } = req.query;
+
+        const skip = (page - 1) * limit;
+        let query = { event: eventId, isVerified: true };
+
+        if (search.trim()) {
+            const regex = new RegExp(search.trim(), 'i');
+            query.$or = [
+                { name: regex },
+                { email: regex },
+                { registrationId: regex }
+            ];
         }
 
         const participants = await Participant.find(query)
-            .sort({ registrationTimestamp: -1 })
+            .sort({ name: 1 })
             .skip(skip)
-            .limit(parseInt(limit))
-            .select('-qrCodeData');
+            .limit(parseInt(limit));
 
-        const total = await Participant.countDocuments(query);
+        const totalCount = await Participant.countDocuments(query);
 
         res.json({
             participants,
             pagination: {
-                current: parseInt(page),
-                pages: Math.ceil(total / limit),
-                total
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(totalCount / limit),
+                totalCount
             }
         });
     } catch (error) {
-        console.error('Get participants error:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Error searching participants directory.' });
     }
 });
 
-// Export to Excel
-router.get('/export', auth, async (req, res) => {
+// 7. Export CSV Participant & Attendance Lists (PRD Section 19)
+router.get('/:eventId/export-csv', auth, async (req, res) => {
     try {
-        const participants = await Participant.find()
-            .sort({ registrationTimestamp: -1 })
-            .select('-qrCodeData');
-
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Event Attendance');
-
-        // Define columns
-        worksheet.columns = [
-            { header: 'Name', key: 'name', width: 25 },
-            { header: 'Email', key: 'email', width: 35 },
-            { header: 'Registration ID', key: 'registrationId', width: 20 },
-            { header: 'Attendance Status', key: 'attendanceStatus', width: 18 },
-            { header: 'Registration Date', key: 'registrationTimestamp', width: 20 },
-            { header: 'Attendance Date', key: 'attendanceTimestamp', width: 20 }
-        ];
-
-        // Style header row
-        worksheet.getRow(1).font = { bold: true };
-        worksheet.getRow(1).fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFE0E0E0' }
-        };
-
-        // Add data
-        participants.forEach(participant => {
-            worksheet.addRow({
-                name: participant.name,
-                email: participant.email,
-                registrationId: participant.registrationId,
-                attendanceStatus: participant.attendanceStatus,
-                registrationTimestamp: participant.registrationTimestamp.toLocaleString(),
-                attendanceTimestamp: participant.attendanceTimestamp ? participant.attendanceTimestamp.toLocaleString() : 'Not Attended'
-            });
-        });
-
-        // Auto-fit columns
-        worksheet.columns.forEach(column => {
-            column.width = Math.max(column.width, 15);
-        });
-
-        // Set response headers
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=event_attendance.xlsx');
-
-        // Write to response
-        await workbook.xlsx.write(res);
-        res.end();
-    } catch (error) {
-        console.error('Export error:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-// Get participant details
-router.get('/participant/:id', auth, async (req, res) => {
-    try {
-        const participant = await Participant.findById(req.params.id);
-        
-        if (!participant) {
-            return res.status(404).json({ message: 'Participant not found' });
+        const { eventId } = req.params;
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found.' });
         }
 
-        res.json({ participant });
+        const participants = await Participant.find({ event: eventId, isVerified: true }).sort({ name: 1 });
+
+        let csv = 'Registration ID,Name,Email,Phone,Attendance Status,Check-In Time\n';
+        participants.forEach(p => {
+            const timeStr = p.attendanceTimestamp ? p.attendanceTimestamp.toLocaleString() : 'N/A';
+            csv += `"${p.registrationId}","${p.name}","${p.email}","${p.phone}","${p.attendanceStatus}","${timeStr}"\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${event.name.replace(/\s+/g, '_')}_report.csv"`);
+        res.status(200).send(csv);
     } catch (error) {
-        console.error('Get participant error:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Error generating CSV download.' });
     }
 });
 
