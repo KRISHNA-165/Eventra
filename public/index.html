@@ -3,179 +3,670 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Attendance System</title>
+    <title>Eventra - Event Attendance & QR Portal</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1><i class="fas fa-calendar-check"></i> Event Attendance System</h1>
-            <nav>
-                <button class="nav-btn active" data-page="registration">
-                    <i class="fas fa-user-plus"></i> Register
-                </button>
-                <button class="nav-btn" data-page="scanner">
-                    <i class="fas fa-qrcode"></i> Scan QR
-                </button>
-                <button class="nav-btn" data-page="admin">
-                    <i class="fas fa-cog"></i> Admin
-                </button>
+    <div class="app-layout">
+        <!-- Top Navigation -->
+        <header class="app-navbar">
+            <div class="nav-brand" onclick="navigateTo('home')">
+                <i class="fa-solid fa-circle-nodes logo-icon"></i>
+                <span class="logo-text">Event<span class="logo-accent">ra</span></span>
+            </div>
+            
+            <nav class="nav-links">
+                <button class="nav-link active" id="btn-nav-home" onclick="navigateTo('home')">Home</button>
+                <button class="nav-link" id="btn-nav-events" onclick="navigateTo('events')">Browse Events</button>
+                <button class="nav-link" id="btn-nav-organizer" onclick="navigateTo('organizer')">Organizer Portal</button>
+                <button class="nav-link" id="btn-nav-admin" onclick="navigateTo('admin')">Admin Desk</button>
             </nav>
+
+            <div class="nav-actions">
+                <button class="mailbox-toggle-btn" onclick="toggleMailbox()">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span class="mailbox-badge" id="mail-badge-count">0</span>
+                    <span>Inbox Logs</span>
+                </button>
+            </div>
         </header>
 
-        <main>
-            <!-- Registration Page -->
-            <div id="registration-page" class="page active">
-                <div class="card">
-                    <h2><i class="fas fa-user-plus"></i> Event Registration</h2>
-                    <form id="registration-form">
-                        <div class="form-group">
-                            <label for="name">Full Name *</label>
-                            <input type="text" id="name" name="name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="registrationId">Registration ID (Optional)</label>
-                            <input type="text" id="registrationId" name="registrationId" placeholder="Leave empty for auto-generation">
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Register
-                        </button>
-                    </form>
-                </div>
-
-                <!-- QR Code Display -->
-                <div id="qr-result" class="card hidden">
-                    <h3><i class="fas fa-qrcode"></i> Your QR Code</h3>
-                    <div class="qr-container">
-                        <img id="qr-image" src="" alt="QR Code">
-                    </div>
-                    <div class="participant-info">
-                        <p><strong>Name:</strong> <span id="participant-name"></span></p>
-                        <p><strong>Email:</strong> <span id="participant-email"></span></p>
-                        <p><strong>Registration ID:</strong> <span id="participant-reg-id"></span></p>
-                    </div>
-                    <button class="btn btn-secondary" onclick="printQR()">
-                        <i class="fas fa-print"></i> Print QR Code
-                    </button>
-                </div>
-            </div>
-
-            <!-- QR Scanner Page -->
-            <div id="scanner-page" class="page">
-                <div class="card">
-                    <h2><i class="fas fa-qrcode"></i> QR Code Scanner</h2>
-                    <div id="scanner-container">
-                        <div id="qr-reader"></div>
-                        <div id="qr-reader-results"></div>
-                    </div>
-                    <div id="scan-result" class="hidden">
-                        <div class="result-message">
-                            <i class="fas fa-check-circle success"></i>
-                            <h3>Attendance Marked Successfully!</h3>
-                            <div class="participant-details">
-                                <p><strong>Name:</strong> <span id="scan-name"></span></p>
-                                <p><strong>Email:</strong> <span id="scan-email"></span></p>
-                                <p><strong>Registration ID:</strong> <span id="scan-reg-id"></span></p>
-                                <p><strong>Time:</strong> <span id="scan-time"></span></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="scan-error" class="hidden">
-                        <div class="error-message">
-                            <i class="fas fa-exclamation-triangle error"></i>
-                            <h3 id="error-title">Error</h3>
-                            <p id="error-message"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Admin Page -->
-            <div id="admin-page" class="page">
-                <div class="card">
-                    <h2><i class="fas fa-cog"></i> Admin Dashboard</h2>
+        <!-- Main Viewport -->
+        <main class="app-viewport">
+            
+            <!-- LANDING PAGE -->
+            <section id="page-home" class="page-section active">
+                <div class="hero-container">
+                    <h1 class="hero-title">Event Registration & <br><span class="gradient-text">QR Attendance Desk</span></h1>
+                    <p class="hero-subtitle">Organize conferences, workshops, and hackathons with secure participant check-ins. Verify emails, issue tickets, and track entries in real-time.</p>
                     
-                    <!-- Login Form -->
-                    <div id="admin-login">
-                        <form id="login-form">
-                            <div class="form-group">
-                                <label for="admin-email">Email</label>
-                                <input type="email" id="admin-email" name="email" required>
+                    <div class="hero-actions">
+                        <button class="btn btn-primary btn-lg" onclick="navigateTo('events')">
+                            Browse Events
+                        </button>
+                        <button class="btn btn-outline btn-lg" onclick="navigateTo('organizer')">
+                            Organizer Login
+                        </button>
+                    </div>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper color-1"><i class="fa-solid fa-qrcode"></i></div>
+                        <h3>QR Scanning</h3>
+                        <p>Generate secure, clean attendee tickets and scan them at the registration desk using any mobile or laptop camera.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper color-2"><i class="fa-solid fa-envelope-circle-check"></i></div>
+                        <h3>SMTP Email OTP</h3>
+                        <p>Mandatory attendee validation utilizing regex format analysis and Nodemailer OTP email transmission.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrapper color-3"><i class="fa-solid fa-chart-simple"></i></div>
+                        <h3>Live Statistics</h3>
+                        <p>Monitor capacity, registrations, and checked-in entries instantly through the administration dashboards.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- EVENTS LISTING -->
+            <section id="page-events" class="page-section">
+                <div class="page-header">
+                    <div>
+                        <h2>Upcoming Events</h2>
+                        <p>Browse listings and secure your ticket.</p>
+                    </div>
+                </div>
+
+                <!-- Event Cards Grid -->
+                <div class="events-grid-layout" id="events-listing-grid">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- REGISTRATION WIZARD -->
+            <section id="page-registration" class="page-section">
+                <div class="registration-wizard-card">
+                    <!-- Wizard Steps -->
+                    <div class="wizard-progress">
+                        <div class="progress-step active" id="step-indicator-1">
+                            <div class="step-num">1</div>
+                            <div class="step-label">Registration Details</div>
+                        </div>
+                        <div class="progress-line" id="progress-line-1"></div>
+                        <div class="progress-step" id="step-indicator-2">
+                            <div class="step-num">2</div>
+                            <div class="step-label">OTP Verification</div>
+                        </div>
+                        <div class="progress-line" id="progress-line-2"></div>
+                        <div class="progress-step" id="step-indicator-3">
+                            <div class="step-num">3</div>
+                            <div class="step-label">QR Ticket Issued</div>
+                        </div>
+                    </div>
+
+                    <div class="event-mini-summary" id="reg-event-summary"></div>
+
+                    <!-- Step 1 details -->
+                    <div class="wizard-step-content active" id="reg-step-1">
+                        <form id="form-registration-details">
+                            <input type="hidden" id="reg-event-id">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="reg-name">Full Name *</label>
+                                    <input type="text" id="reg-name" required placeholder="John Doe">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-email">Email Address *</label>
+                                    <input type="email" id="reg-email" required placeholder="john.doe@gmail.com">
+                                    <span class="field-tip">We will send a validation code to this email.</span>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="admin-password">Password</label>
-                                <input type="password" id="admin-password" name="password" required>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="reg-phone">Phone Number *</label>
+                                    <input type="tel" id="reg-phone" required placeholder="+91 9876543210">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-college">Organization / College *</label>
+                                    <input type="text" id="reg-college" required placeholder="e.g. Stanford University">
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-sign-in-alt"></i> Login
-                            </button>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="reg-dept">Department <span class="optional">(Optional)</span></label>
+                                    <input type="text" id="reg-dept" placeholder="e.g. Computer Science">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-year">Year of Study <span class="optional">(Optional)</span></label>
+                                    <select id="reg-year">
+                                        <option value="">Select Year...</option>
+                                        <option value="1st Year">1st Year</option>
+                                        <option value="2nd Year">2nd Year</option>
+                                        <option value="3rd Year">3rd Year</option>
+                                        <option value="4th Year">4th Year</option>
+                                        <option value="Other">Other / Postgraduate</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="wizard-actions">
+                                <button type="button" class="btn btn-secondary" onclick="navigateTo('events')">Back</button>
+                                <button type="submit" class="btn btn-primary">Send OTP Verification</button>
+                            </div>
                         </form>
                     </div>
 
-                    <!-- Dashboard Content -->
-                    <div id="admin-dashboard" class="hidden">
-                        <div class="dashboard-stats">
-                            <div class="stat-card">
-                                <i class="fas fa-users"></i>
-                                <h3 id="total-registered">0</h3>
-                                <p>Total Registered</p>
-                            </div>
-                            <div class="stat-card">
-                                <i class="fas fa-check-circle"></i>
-                                <h3 id="total-attended">0</h3>
-                                <p>Attended</p>
-                            </div>
-                            <div class="stat-card">
-                                <i class="fas fa-clock"></i>
-                                <h3 id="total-remaining">0</h3>
-                                <p>Remaining</p>
-                            </div>
-                            <div class="stat-card">
-                                <i class="fas fa-percentage"></i>
-                                <h3 id="attendance-rate">0%</h3>
-                                <p>Attendance Rate</p>
-                            </div>
-                        </div>
+                    <!-- Step 2 verification -->
+                    <div class="wizard-step-content" id="reg-step-2">
+                        <div class="otp-verification-wrapper">
+                            <div class="otp-avatar"><i class="fa-solid fa-envelope-open-text"></i></div>
+                            <h3>Email Verification Required</h3>
+                            <p>We have dispatched a 6-digit OTP code to <b id="otp-sent-email"></b>. Please retrieve the code from your email inbox or check the logs drawer.</p>
+                            
+                            <form id="form-otp-verification">
+                                <div class="otp-input-container">
+                                    <input type="text" id="otp-input" maxlength="6" pattern="\d{6}" required placeholder="000000" autocomplete="one-time-code">
+                                </div>
 
-                        <div class="dashboard-actions">
-                            <button class="btn btn-success" onclick="exportToExcel()">
-                                <i class="fas fa-file-excel"></i> Export to Excel
-                            </button>
-                            <button class="btn btn-info" onclick="refreshDashboard()">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                            <button class="btn btn-secondary" onclick="logout()">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </button>
+                                <div class="wizard-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="goBackToStep1()">Back</button>
+                                    <button type="submit" class="btn btn-success">Verify & Register</button>
+                                </div>
+                            </form>
                         </div>
+                    </div>
 
-                        <div class="recent-attendees">
-                            <h3><i class="fas fa-history"></i> Recent Attendees</h3>
-                            <div id="recent-list" class="attendees-list">
-                                <!-- Recent attendees will be populated here -->
+                    <!-- Step 3 ticket -->
+                    <div class="wizard-step-content" id="reg-step-3">
+                        <div class="ticket-wrapper">
+                            <div class="ticket-header">
+                                <i class="fa-solid fa-circle-check success-icon"></i>
+                                <h3>Registration Completed!</h3>
+                                <p>A confirmation email containing your registration details and ticket QR code has been dispatched.</p>
+                            </div>
+
+                            <div class="ticket-box" id="printable-ticket">
+                                <div class="ticket-left">
+                                    <div class="ticket-event-category" id="ticket-event-cat">Event Category</div>
+                                    <h2 class="ticket-event-name" id="ticket-event-title">Event Title</h2>
+                                    
+                                    <div class="ticket-meta-grid">
+                                        <div>
+                                            <span class="meta-label">Date & Time</span>
+                                            <span class="meta-val" id="ticket-event-date">Date info</span>
+                                        </div>
+                                        <div>
+                                            <span class="meta-label">Venue</span>
+                                            <span class="meta-val" id="ticket-event-venue">Venue Location</span>
+                                        </div>
+                                        <div>
+                                            <span class="meta-label">Registration ID</span>
+                                            <span class="meta-val highlight-val" id="ticket-reg-id">REG-ID</span>
+                                        </div>
+                                        <div>
+                                            <span class="meta-label">Participant Name</span>
+                                            <span class="meta-val" id="ticket-attendee-name">Name</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ticket-right">
+                                    <div class="ticket-qr-wrapper">
+                                        <img src="" id="ticket-qr-img" alt="QR Code Ticket">
+                                    </div>
+                                    <span class="ticket-qr-tip">Present QR code for check-in</span>
+                                </div>
+                            </div>
+
+                            <div class="wizard-actions">
+                                <button class="btn btn-primary" onclick="printTicket()"><i class="fa-solid fa-print"></i> Print Ticket</button>
+                                <button class="btn btn-outline" onclick="navigateTo('events')">Browse Events</button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- ORGANIZER PORTAL -->
+            <section id="page-organizer" class="page-section">
+                <!-- Login card -->
+                <div id="organizer-auth-wrapper" class="auth-card">
+                    <div class="auth-tabs">
+                        <button class="auth-tab active" id="auth-tab-login" onclick="toggleAuthMode('login')">Organizer Login</button>
+                        <button class="auth-tab" id="auth-tab-register" onclick="toggleAuthMode('register')">Register Organizer</button>
+                    </div>
+
+                    <form id="form-organizer-login" class="auth-form active">
+                        <div class="form-group">
+                            <label for="org-login-email">Email Address</label>
+                            <input type="email" id="org-login-email" required placeholder="organizer@event.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="org-login-password">Password</label>
+                            <input type="password" id="org-login-password" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                    </form>
+
+                    <form id="form-organizer-register" class="auth-form">
+                        <div class="form-group">
+                            <label for="org-reg-name">Company / Organization Name</label>
+                            <input type="text" id="org-reg-name" required placeholder="e.g. Science Association">
+                        </div>
+                        <div class="form-group">
+                            <label for="org-reg-email">Contact Email</label>
+                            <input type="email" id="org-reg-email" required placeholder="e.g. contact@science.org">
+                        </div>
+                        <div class="form-group">
+                            <label for="org-reg-password">Password</label>
+                            <input type="password" id="org-reg-password" required placeholder="Minimum 6 characters">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Register Account</button>
+                    </form>
+                </div>
+
+                <!-- Dashboard (Auth Only) -->
+                <div id="organizer-dashboard" class="hidden">
+                    <div class="dashboard-header">
+                        <div>
+                            <h2>Organizer Management Portal</h2>
+                            <p>Coordinate events, monitor check-in statistics, and assign admins.</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="showCreateEventModal()"><i class="fa-solid fa-plus"></i> Create Event</button>
+                            <button class="btn btn-outline" onclick="logoutOrganizer()">Logout</button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics row -->
+                    <div class="stats-row">
+                        <div class="dashboard-stat-card">
+                            <div class="stat-icon-bg color-1"><i class="fa-solid fa-calendar-check"></i></div>
+                            <div class="stat-content">
+                                <h3 id="org-stat-total-events">0</h3>
+                                <p>Total Events</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="stat-icon-bg color-2"><i class="fa-solid fa-hourglass-half"></i></div>
+                            <div class="stat-content">
+                                <h3 id="org-stat-upcoming-events">0</h3>
+                                <p>Upcoming Events</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="stat-icon-bg color-3"><i class="fa-solid fa-users"></i></div>
+                            <div class="stat-content">
+                                <h3 id="org-stat-total-regs">0</h3>
+                                <p>Total Registrations</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="stat-icon-bg color-4"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="stat-content">
+                                <h3 id="org-stat-total-att">0</h3>
+                                <p>Total Attendance</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-tabs-container">
+                        <button class="tab-btn active" id="tab-org-events" onclick="toggleOrganizerSubTab('events')">My Events</button>
+                        <button class="tab-btn" id="tab-org-admins" onclick="toggleOrganizerSubTab('admins')">Coordinate Admins</button>
+                    </div>
+
+                    <!-- Created Events -->
+                    <div class="org-subtab-content active" id="org-subtab-events-view">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Event Name</th>
+                                        <th>Venue & Schedule</th>
+                                        <th>Registrations</th>
+                                        <th>Lifecycle State</th>
+                                        <th>Desk Mode</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="org-events-table-body">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Coordinate admins -->
+                    <div class="org-subtab-content" id="org-subtab-admins-view">
+                        <div class="admin-coord-grid">
+                            <div class="form-card">
+                                <h3>Create Administrator Account</h3>
+                                <p class="form-desc">Provide login credentials and select the assigned event scopes.</p>
+                                
+                                <form id="form-create-admin">
+                                    <div class="form-group">
+                                        <label for="admin-name">Administrator Name *</label>
+                                        <input type="text" id="admin-name" required placeholder="e.g. Alex Green">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="admin-email">Administrator Email *</label>
+                                        <input type="email" id="admin-email" required placeholder="e.g. alex@event.com">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="admin-password">Password Credentials *</label>
+                                        <input type="password" id="admin-password" required placeholder="Minimum 6 characters">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Assign Events</label>
+                                        <div class="admin-event-checklist" id="create-admin-event-checklist">
+                                            <!-- Checkboxes -->
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-block">Register Admin</button>
+                                </form>
+                            </div>
+
+                            <div class="admins-list-card">
+                                <h3>Active Administrative Staff</h3>
+                                <div class="active-admins-wrapper" id="active-admins-list">
+                                    <!-- Active admins -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADMIN DESK / SCANNER -->
+            <section id="page-admin" class="page-section">
+                <!-- Login -->
+                <div id="admin-auth-wrapper" class="auth-card">
+                    <h2>Desk Login</h2>
+                    <p class="auth-subtitle">Provide your administrator credentials to access your assigned events.</p>
+                    
+                    <form id="form-admin-login">
+                        <div class="form-group">
+                            <label for="adm-login-email">Email Address</label>
+                            <input type="email" id="adm-login-email" required placeholder="admin@event.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="adm-login-password">Password</label>
+                            <input type="password" id="adm-login-password" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Authenticate Desk</button>
+                    </form>
+                </div>
+
+                <!-- Event Select (No passwords required) -->
+                <div id="admin-event-select-wrapper" class="auth-card hidden">
+                    <h3>Select Assigned Event</h3>
+                    <p class="auth-subtitle">Select the entry checkpoint desk you wish to operate.</p>
+                    
+                    <form id="form-admin-event-select">
+                        <div class="form-group">
+                            <label for="adm-select-event">Assigned Event</label>
+                            <select id="adm-select-event" required>
+                                <option value="">Select Event...</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Open Check-In Desk</button>
+                    </form>
+                </div>
+
+                <!-- Admin Dash (Scanner & Directory) -->
+                <div id="admin-event-dashboard" class="hidden">
+                    <div class="dashboard-header">
+                        <div>
+                            <span class="admin-badge">Admin Scan Mode</span>
+                            <h2 id="adm-active-event-name">Event Dashboard</h2>
+                            <p><i class="fa-solid fa-location-dot"></i> <span id="adm-active-event-venue">Venue</span> | <i class="fa-solid fa-calendar"></i> <span id="adm-active-event-date">Date</span></p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-outline" onclick="changeAdminEvent()">Switch Event</button>
+                            <button class="btn btn-secondary" onclick="logoutAdmin()">Logout</button>
+                        </div>
+                    </div>
+
+                    <!-- Live metrics -->
+                    <div class="stats-grid-desk">
+                        <div class="desk-stat-card">
+                            <h3>Total Registrations</h3>
+                            <p id="adm-metric-total">0</p>
+                        </div>
+                        <div class="desk-stat-card checkin-accent">
+                            <h3>Checked-In (Present)</h3>
+                            <p id="adm-metric-checkedin">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Desk layout -->
+                    <div class="admin-desk-grid">
+                        <div class="panel-left">
+                            <!-- Scanner panel -->
+                            <div class="desk-panel-card">
+                                <h3><i class="fa-solid fa-camera"></i> Live QR Scanner</h3>
+                                
+                                <div class="scanner-toggle-controls">
+                                    <button class="btn btn-success" id="btn-start-scanner" onclick="startScanner()">
+                                        <i class="fa-solid fa-play"></i> Turn On Camera
+                                    </button>
+                                    <button class="btn btn-danger hidden" id="btn-stop-scanner" onclick="stopScanner()">
+                                        <i class="fa-solid fa-stop"></i> Turn Off Camera
+                                    </button>
+                                </div>
+
+                                <div class="qr-camera-outer">
+                                    <div id="qr-camera-viewport"></div>
+                                    <div class="scanner-overlay-guide"></div>
+                                </div>
+
+                                <!-- Validation feedback panel -->
+                                <div class="scanner-feedback-box hidden" id="scanner-feedback">
+                                    <div class="feedback-icon" id="scan-feedback-icon">
+                                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                                    </div>
+                                    <div class="feedback-text">
+                                        <h4 id="scan-feedback-title">Decrypting ticket...</h4>
+                                        <p id="scan-feedback-desc">Analyzing entry registry</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Manual check-in panel -->
+                            <div class="desk-panel-card">
+                                <h3><i class="fa-solid fa-keyboard"></i> Manual Check-In</h3>
+                                <p class="panel-card-tip">Check in attendees manually by entering their ID.</p>
+                                
+                                <form id="form-manual-checkin">
+                                    <div class="form-group-inline">
+                                        <input type="text" id="manual-reg-id-input" required placeholder="Registration ID (e.g. HACK2026-0001)">
+                                        <button type="submit" class="btn btn-primary">Mark Present</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="panel-right">
+                            <!-- Directory -->
+                            <div class="desk-panel-card fill-height">
+                                <div class="card-header-flex">
+                                    <h3>Registry Directory</h3>
+                                    <button class="btn btn-outline btn-sm" onclick="exportReport('csv')">
+                                        <i class="fa-solid fa-file-csv text-info"></i> Export CSV Report
+                                    </button>
+                                </div>
+
+                                <div class="directory-filters">
+                                    <div class="search-input-wrapper">
+                                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                        <input type="text" id="directory-search-input" placeholder="Search by name, email, ID..." onkeyup="loadDirectory()">
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive desk-table-wrapper">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Registration ID</th>
+                                                <th>Name</th>
+                                                <th>Email & Phone</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="directory-table-body">
+                                            <!-- Loaded dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="table-pagination-nav">
+                                    <span class="pagination-info" id="directory-pagination-info">Showing page 0 of 0</span>
+                                    <div class="pagination-buttons">
+                                        <button class="btn btn-outline btn-sm" id="btn-prev-page" onclick="changeDirectoryPage(-1)">Prev</button>
+                                        <button class="btn btn-outline btn-sm" id="btn-next-page" onclick="changeDirectoryPage(1)">Next</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
-
-        <!-- Loading Spinner -->
-        <div id="loading" class="loading hidden">
-            <div class="spinner"></div>
-            <p>Loading...</p>
-        </div>
-
-        <!-- Toast Notifications -->
-        <div id="toast-container"></div>
     </div>
 
-    <!-- Scripts -->
+    <!-- CREATE EVENT MODAL -->
+    <div id="modal-create-event" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Create Event</h3>
+                <button class="modal-close-btn" onclick="hideCreateEventModal()">&times;</button>
+            </div>
+            
+            <form id="form-create-event">
+                <div class="modal-body scrollable">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evt-name">Event Name *</label>
+                            <input type="text" id="evt-name" required placeholder="e.g. Hackathon 2026">
+                        </div>
+                        <div class="form-group">
+                            <label for="evt-category">Category Prefix *</label>
+                            <input type="text" id="evt-category" required placeholder="e.g. HACK, WORK, SEMI">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="evt-desc">Description *</label>
+                        <textarea id="evt-desc" required rows="3" placeholder="General schedule details..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evt-banner">Banner Theme *</label>
+                            <select id="evt-banner" required>
+                                <option value="theme-purple">Purple Tech</option>
+                                <option value="theme-indigo">Indigo Corporate</option>
+                                <option value="theme-emerald">Green Innovation</option>
+                                <option value="theme-coral">Coral Creative</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="evt-venue">Venue *</label>
+                            <input type="text" id="evt-venue" required placeholder="e.g. Auditorium Hall A">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evt-start-date">Start Date *</label>
+                            <input type="date" id="evt-start-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="evt-end-date">End Date *</label>
+                            <input type="date" id="evt-end-date" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evt-start-time">Start Time *</label>
+                            <input type="text" id="evt-start-time" required placeholder="e.g. 10:00 AM">
+                        </div>
+                        <div class="form-group">
+                            <label for="evt-end-time">End Time *</label>
+                            <input type="text" id="evt-end-time" required placeholder="e.g. 5:00 PM">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evt-reg-open">Registration Open *</label>
+                            <input type="date" id="evt-reg-open" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="evt-reg-close">Registration Close *</label>
+                            <input type="date" id="evt-reg-close" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evt-capacity">Maximum Capacity (Slots) *</label>
+                            <input type="number" id="evt-capacity" required min="1" placeholder="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="evt-status">Initial Status</label>
+                            <select id="evt-status">
+                                <option value="registration_open">Registration Open</option>
+                                <option value="draft">Draft</option>
+                                <option value="live">Live</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateEventModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIL SANDBOX DRAWER -->
+    <div id="simulated-mailbox-drawer" class="mailbox-drawer hidden">
+        <div class="mailbox-header">
+            <h3>SMTP Intercept Logs</h3>
+            <button class="mailbox-close-btn" onclick="toggleMailbox()">&times;</button>
+        </div>
+        <div class="mailbox-body">
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">
+                This logs copies of SMTP emails (OTPs, tickets) sent via NodeMailer. Helpful for testing.
+            </p>
+            <div class="mail-list" id="mailbox-messages-list">
+                <!-- Outgoing emails appear here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div id="app-loading-screen" class="loading-overlay hidden">
+        <div class="loader-spinner-wrapper">
+            <div class="loader-spinner"></div>
+            <p id="loading-overlay-message">Loading parameters...</p>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <!-- html5-qrcode scanner -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="script.js"></script>
 </body>
