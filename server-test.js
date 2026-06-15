@@ -377,10 +377,7 @@ app.post('/api/registration/verify-otp', (req, res) => {
     });
 });
 
-// 13. Simulated Emails list
-app.get('/api/registration/simulated-emails', (req, res) => {
-    res.json({ notifications });
-});
+
 
 // 14. Mark Attendance (QR)
 app.post('/api/attendance/mark', (req, res) => {

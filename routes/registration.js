@@ -278,14 +278,4 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
-// 3. Simulated Emails endpoint
-router.get('/simulated-emails', async (req, res) => {
-    try {
-        const notifications = await Notification.find().sort({ sentAt: -1 }).limit(15);
-        res.json({ notifications });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error retrieving mailbox logs.' });
-    }
-});
-
 module.exports = router;

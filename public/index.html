@@ -25,13 +25,6 @@
                 <button class="nav-link" id="btn-nav-admin" onclick="navigateTo('admin')">Admin Desk</button>
             </nav>
 
-            <div class="nav-actions">
-                <button class="mailbox-toggle-btn" onclick="toggleMailbox()">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span class="mailbox-badge" id="mail-badge-count">0</span>
-                    <span>Inbox Logs</span>
-                </button>
-            </div>
         </header>
 
         <!-- Main Viewport -->
@@ -639,21 +632,6 @@
         </div>
     </div>
 
-    <!-- MAIL SANDBOX DRAWER -->
-    <div id="simulated-mailbox-drawer" class="mailbox-drawer hidden">
-        <div class="mailbox-header">
-            <h3>SMTP Intercept Logs</h3>
-            <button class="mailbox-close-btn" onclick="toggleMailbox()">&times;</button>
-        </div>
-        <div class="mailbox-body">
-            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">
-                This logs copies of SMTP emails (OTPs, tickets) sent via NodeMailer. Helpful for testing.
-            </p>
-            <div class="mail-list" id="mailbox-messages-list">
-                <!-- Outgoing emails appear here -->
-            </div>
-        </div>
-    </div>
 
     <!-- LOADING SCREEN -->
     <div id="app-loading-screen" class="loading-overlay hidden">
