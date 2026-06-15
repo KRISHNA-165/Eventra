@@ -25,9 +25,6 @@ let html5QrcodeScanner = null;
 let directoryPage = 1;
 let directoryTotalPages = 1;
 
-// Outgoing SMTP sandbox drawer state
-let mailboxOpen = false;
-let mailboxInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
@@ -250,7 +247,6 @@ async function handleRegistrationStep1(e) {
         const result = await response.json();
 
         if (response.ok) {
-            triggerMailboxPoll();
             currentOtpEmail = email;
             
             document.getElementById('otp-sent-email').textContent = email;
@@ -263,7 +259,6 @@ async function handleRegistrationStep1(e) {
             document.getElementById('progress-line-1').classList.add('done');
 
             showToast('Verification OTP has been sent.', 'success');
-            if (!mailboxOpen) toggleMailbox();
         } else {
             showToast(result.message || 'OTP request failed.', 'error');
         }
@@ -308,7 +303,6 @@ async function handleRegistrationStep2(e) {
             document.getElementById('progress-line-2').classList.add('done');
 
             showToast('Email verified successfully! Ticket issued.', 'success');
-            triggerMailboxPoll();
             
             document.getElementById('form-registration-details').reset();
             document.getElementById('form-otp-verification').reset();
@@ -1034,90 +1028,6 @@ async function exportReport(format) {
     }
 }
 
-// ==========================================
-// SIMULATED DRAWER LOGS
-// ==========================================
-function toggleMailbox() {
-    const drawer = document.getElementById('simulated-mailbox-drawer');
-    mailboxOpen = !mailboxOpen;
-    drawer.classList.toggle('hidden', !mailboxOpen);
-    
-    if (mailboxOpen) {
-        fetchSimulatedEmails();
-        mailboxInterval = setInterval(fetchSimulatedEmails, 5000);
-    } else {
-        if (mailboxInterval) {
-            clearInterval(mailboxInterval);
-            mailboxInterval = null;
-        }
-    }
-}
-
-async function fetchSimulatedEmails() {
-    try {
-        const response = await fetch(`${API_BASE}/registration/simulated-emails`);
-        const result = await response.json();
-        
-        if (response.ok) {
-            renderSimulatedMailbox(result.notifications || []);
-        }
-    } catch (err) {
-        console.error('Mail intercept fetch error:', err.message);
-    }
-}
-
-function triggerMailboxPoll() {
-    fetchSimulatedEmails();
-}
-
-function renderSimulatedMailbox(list) {
-    const container = document.getElementById('mailbox-messages-list');
-    document.getElementById('mail-badge-count').textContent = list.length;
-    container.innerHTML = '';
-
-    if (list.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No SMTP mail intercept records.</div>';
-        return;
-    }
-
-    list.forEach(msg => {
-        const sentTime = new Date(msg.sentAt).toLocaleTimeString();
-        const otpMatch = msg.content.match(/\b\d{6}\b/);
-        const otpCode = otpMatch ? otpMatch[0] : '';
-        const copyButtonHtml = otpCode 
-            ? `<button class="otp-copy-btn" onclick="copyOtpToClipboard('${otpCode}', this)"><i class="fa-solid fa-copy"></i> Copy OTP: ${otpCode}</button>`
-            : '';
-
-        const item = document.createElement('div');
-        item.className = 'mail-item';
-        item.innerHTML = `
-            <div class="mail-item-header">
-                <span class="mail-item-recipient">To: ${msg.recipient}</span>
-                <span>${sentTime}</span>
-            </div>
-            <div class="mail-item-subject">${msg.type}</div>
-            <div class="mail-item-body">${msg.content}</div>
-            ${copyButtonHtml}
-        `;
-        container.appendChild(item);
-    });
-}
-
-function copyOtpToClipboard(code, btn) {
-    navigator.clipboard.writeText(code).then(() => {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-        showToast('OTP copied to clipboard.', 'success');
-        
-        const otpInput = document.getElementById('otp-input');
-        if (otpInput && document.getElementById('reg-step-2').classList.contains('active')) {
-            otpInput.value = code;
-        }
-
-        setTimeout(() => {
-            btn.innerHTML = `<i class="fa-solid fa-copy"></i> Copy OTP: ${code}`;
-        }, 2000);
-    });
-}
 
 // ==========================================
 // UTILITY FUNCTIONS
